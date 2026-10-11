@@ -1,34 +1,36 @@
 # NutriSnap – Food Logging and Calorie Tracker
 
-College Deep Learning project: take a photo of food, classify it with a **Vision Transformer**, look up nutrition, and log the meal.
+A Deep Learning project that identifies Indian food from an image, estimates its nutritional values, and helps users track their daily meals.
 
-## What it does
+## What It Does
 
-1. Open **Snap Food** and upload or capture a plate photo.
-2. Flask preprocesses the image (RGB, 224×224 via the ViT processor).
-3. A **ViT-Base** model predicts one of **80 Indian food classes**.
-4. Calories, protein, carbs, fat, and serving size come from an Indian food nutrition table.
-5. You adjust the serving, pick Breakfast / Lunch / Dinner / Snack, and **Add to Log**.
-6. SQLite stores the meal and the dashboard updates.
+1. Upload or capture a food image using **Snap Food**.
+2. Flask preprocesses the image into RGB format at 224 × 224 pixels.
+3. A **Vision Transformer (ViT-Base)** predicts one of 80 Indian food classes.
+4. Nutritional values—including calories, protein, carbohydrates, fat, and serving size—are retrieved from a nutrition dataset.
+5. Adjust the serving size, select a meal category (Breakfast, Lunch, Dinner, or Snack), and add the meal to your log.
+6. SQLite stores meal records and updates the dashboard.
 
-OpenRouter is the **only** external API. It writes a short nutrition note and, if the ViT is unsure, can confirm the dish from the photo.
+OpenRouter provides an optional AI-generated nutrition note and a fallback dish verification feature when the image classifier has low confidence.
 
-## Deep Learning model
+## Deep Learning Model
 
-| Item | Detail |
-| --- | --- |
-| Architecture | Vision Transformer (`ViTForImageClassification`, patch size 16, 224px) |
-| Task | Image classification, 80 classes |
-| Image dataset | [Indian Food Images Dataset](https://www.kaggle.com/datasets/iamsouravbanerjee/indian-food-images-dataset) (4,000 images) |
-| Nutrition dataset | [Indian Food Nutritional Values Dataset (2025)](https://www.kaggle.com/datasets/batthulavinay/indian-food-nutrition) |
-| Default weights | Fine-tuned ViT on that image dataset (`dima806/indian_food_image_detection`) |
-| Your own training | `python ml/train.py` saves `models/nutrisnap_vit/` |
+| Item | Details |
+|---|---|
+| Architecture | Vision Transformer (ViTForImageClassification), patch size 16, 224 × 224 input |
+| Task | Image classification across 80 classes |
+| Image dataset | [Indian Food Images Dataset – Kaggle](https://www.kaggle.com/datasets/iamsouravbanerjee/indian-food-images-dataset) |
+| Nutrition dataset | [Indian Food Nutrition Dataset – Kaggle](https://www.kaggle.com/datasets/batthulavinay/indian-food-nutrition) |
+| Pretrained weights | [dima806/indian_food_image_detection](https://huggingface.co/dima806/indian_food_image_detection) |
+| Optional training | `python ml/train.py` |
 
-The app **prefers your fine-tuned folder** if it exists. Otherwise it downloads the public ViT trained on the same Kaggle classes.
+The application prefers locally fine-tuned model weights when available. Otherwise, it attempts to load the configured pretrained model.
 
-This is not a keyword search. The backend runs a real transformer on the pixels, then maps the predicted class to macros.
+The classifier processes image pixels rather than relying on keyword search. Predicted food classes are mapped to nutritional information from the nutrition table.
 
 ## Setup
+
+Open a terminal in the project directory and run:
 
 ```powershell
 cd C:\Users\LENOVO\NutriSnap
@@ -38,49 +40,64 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Put your OpenRouter key in `.env`:
+Add your OpenRouter credentials to `.env` if you want to use the optional AI features:
 
-```
-OPENROUTER_API_KEY=sk-or-...
+```text
+OPENROUTER_API_KEY=your_api_key_here
 OPENROUTER_MODEL=google/gemini-2.0-flash-001
 ```
 
-The app still classifies food **without** the key. The key is only for the AI note and low-confidence vision check.
+Food classification should work without an OpenRouter API key if the configured model and required dependencies are available.
 
-Run:
+Run the application:
 
 ```powershell
 python app.py
 ```
 
-Open [http://127.0.0.1:5000](http://127.0.0.1:5000). The first start downloads ViT weights (a few hundred MB).
+Open http://127.0.0.1:5000 in your browser.
 
-## Train on the Kaggle datasets (optional, recommended for the report)
+The first launch may download model weights if they are not available locally.
 
-KaggleHub will prompt for a Kaggle account the first time.
+## Optional Model Training
+
+Training depends on the dataset setup and the arguments supported by `ml/train.py`.
 
 ```powershell
 python ml/train.py --epochs 3
-python ml/train.py --epochs 5 --subset 16
 ```
 
-`--subset 16` trains a smaller, usually more accurate set of popular classes. After training, restart `python app.py` so it loads `models/nutrisnap_vit`.
+After training, restart the application if it is configured to load the newly saved model.
 
-## Project layout
+## Project Structure
 
+```text
+NutriSnap/
+├── app.py
+├── frontend/
+├── ml/
+│   ├── classifier.py
+│   ├── train.py
+│   ├── nutrition.py
+│   ├── database.py
+│   └── openrouter_client.py
+├── models/
+├── uploads/
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
 ```
-app.py                 Flask API + static frontend
-frontend/              Snap Food UI, dashboard, How It Works
-ml/classifier.py       ViT inference
-ml/train.py            Fine-tune on the Kaggle image dataset
-ml/nutrition.py        Macros for all 80 classes
-ml/database.py         SQLite meal log
-ml/openrouter_client.py
-```
 
-## Report talking points
+## Key Concepts
 
-- Transfer learning: ImageNet-21k ViT, then Indian food fine-tuning.
-- Softmax confidence and top-4 alternatives in the UI.
-- Serving-size scaling is linear on the nutrition table, not a second network.
-- OpenRouter is coaching / fallback, not a replacement for the classifier.
+- Transfer learning using a Vision Transformer.
+- Image preprocessing and food classification.
+- Prediction confidence and alternative class predictions.
+- Serving-size-based nutritional estimates.
+- SQLite-based meal logging.
+- Optional AI-generated nutrition notes and fallback verification.
+
+## Disclaimer
+
+Nutritional values are estimates based on the available dataset and selected serving size. Actual nutritional content can vary with ingredients, preparation methods, and portion sizes.
