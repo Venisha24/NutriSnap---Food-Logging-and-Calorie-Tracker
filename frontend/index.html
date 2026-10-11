@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriSnap – Snap Food, Track Calories</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="aurora"></div>
+  <header class="nav">
+    <a class="brand" href="#home" data-route="home">
+      <span class="logo">N</span>
+      NutriSnap
+    </a>
+    <nav>
+      <button data-route="home">Home</button>
+      <button data-route="snap" class="accent">Snap Food</button>
+      <button data-route="dashboard">Dashboard</button>
+      <button data-route="how">AI Behind It</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-home" class="view active">
+      <div class="hero">
+        <p class="eyebrow">Deep Learning calorie tracker</p>
+        <h1>Photograph the plate.<br /><em>The model names the meal.</em></h1>
+        <p class="lede">
+          NutriSnap uses a Vision Transformer trained on 80 Indian dishes.
+          You snap a photo, the CNN-style transformer predicts the food,
+          nutrition is looked up, and your day is logged.
+        </p>
+        <div class="hero-actions">
+          <button class="btn primary" data-route="snap">Open Snap Food</button>
+          <button class="btn ghost" data-route="how">See how the model works</button>
+        </div>
+        <div class="stat-row">
+          <div><strong>80</strong><span>food classes</span></div>
+          <div><strong>ViT</strong><span>image model</span></div>
+          <div><strong>1</strong><span>OpenRouter key</span></div>
+        </div>
+      </div>
+      <div class="home-grid">
+        <article class="glass step-card">
+          <span>01</span>
+          <h3>Snap</h3>
+          <p>Upload or capture a photo of Indian food. Preview it before analysis.</p>
+        </article>
+        <article class="glass step-card">
+          <span>02</span>
+          <h3>Recognize</h3>
+          <p>A ViT model classifies the dish and returns a confidence score.</p>
+        </article>
+        <article class="glass step-card">
+          <span>03</span>
+          <h3>Log</h3>
+          <p>Adjust the serving, pick a meal type, and store it in SQLite.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="view-snap" class="view">
+      <div class="snap-layout">
+        <div class="glass panel">
+          <h2>Snap Food</h2>
+          <p class="muted">Upload a photo. The Vision Transformer will classify it into one of 80 Indian dishes.</p>
+          <label class="dropzone" id="dropzone">
+            <input id="file-input" type="file" accept="image/*" hidden />
+            <div id="drop-copy">
+              <strong>Drop a plate photo here</strong>
+              <span>or click to upload / take a picture</span>
+            </div>
+            <img id="preview" alt="Food preview" hidden />
+          </label>
+          <div class="camera-row">
+            <button class="btn ghost" id="camera-btn" type="button">Use camera</button>
+            <button class="btn primary" id="analyze-btn" type="button" disabled>Analyze Food</button>
+          </div>
+          <video id="camera" playsinline hidden></video>
+          <canvas id="camera-canvas" hidden></canvas>
+          <p id="status" class="status"></p>
+        </div>
+
+        <div class="glass panel result-panel" id="result-panel" hidden>
+          <div class="result-head">
+            <div>
+              <p class="eyebrow" id="result-category">Predicted dish</p>
+              <h2 id="result-name">—</h2>
+            </div>
+            <div class="ring" id="confidence-ring">
+              <svg viewBox="0 0 36 36">
+                <path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="fg" id="ring-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <strong id="confidence-label">0%</strong>
+            </div>
+          </div>
+          <p class="insight" id="insight"></p>
+          <div class="macro-grid" id="macros"></div>
+          <label class="serving">
+            Serving size <span id="serving-label">1.0×</span>
+            <input id="serving" type="range" min="0.5" max="2.5" step="0.25" value="1" />
+          </label>
+          <div class="meal-types" id="meal-types">
+            <button type="button" data-meal="Breakfast">Breakfast</button>
+            <button type="button" data-meal="Lunch">Lunch</button>
+            <button type="button" data-meal="Dinner">Dinner</button>
+            <button type="button" data-meal="Snack">Snack</button>
+          </div>
+          <button class="btn primary full" id="log-btn" type="button">Add to Log</button>
+          <ul class="alts" id="alts"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-dashboard" class="view">
+      <div class="dash-head">
+        <h2>Today’s nutrition</h2>
+        <p class="muted">Logged meals live in a local SQLite database and refresh automatically.</p>
+      </div>
+      <div class="dash-grid">
+        <article class="glass calorie-card">
+          <p class="eyebrow">Calories</p>
+          <h2 id="cal-total">0</h2>
+          <div class="goal-bar"><span id="cal-fill"></span></div>
+          <p class="muted"><span id="cal-left">2000</span> kcal remaining of 2000</p>
+        </article>
+        <article class="glass">
+          <p class="eyebrow">Macros</p>
+          <div class="macro-bars" id="dash-macros"></div>
+        </article>
+        <article class="glass">
+          <p class="eyebrow">By meal</p>
+          <div id="by-meal" class="by-meal"></div>
+        </article>
+      </div>
+      <div class="glass meal-list-wrap">
+        <h3>Meal log</h3>
+        <div id="meal-list" class="meal-list"></div>
+      </div>
+    </section>
+
+    <section id="view-how" class="view">
+      <div class="how glass">
+        <p class="eyebrow">AI behind NutriSnap</p>
+        <h2>A real Vision Transformer, not a lookup toy</h2>
+        <p>
+          Classification runs on-device in the Flask backend with
+          <strong>ViTForImageClassification</strong>. The network splits the photo into
+          16×16 patches, encodes them with 12 transformer layers, and outputs a
+          softmax over 80 Indian food classes from the Kaggle
+          <em>Indian Food Images Dataset</em>.
+        </p>
+        <ol class="pipeline">
+          <li><strong>Preprocess</strong> Resize to 224×224 and normalize.</li>
+          <li><strong>ViT backbone</strong> Patch embeddings + self-attention.</li>
+          <li><strong>Softmax head</strong> Predicted class + confidence.</li>
+          <li><strong>Nutrition table</strong> Macros from the 2025 Indian food nutrition dataset.</li>
+          <li><strong>OpenRouter</strong> Optional 2-sentence coaching note. If ViT confidence is low, a vision model may confirm the class. This is the only API key in the project.</li>
+        </ol>
+        <p class="muted" id="model-status">Loading model status…</p>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
